@@ -1,0 +1,23 @@
+<!--
+  This is NOT a full manifest — Flutter's `flutter create` already generates
+  AndroidManifest.xml with the required <application> and <activity> tags.
+  Add the block below INSIDE the existing <application> tag of that file.
+-->
+
+<provider
+    android:name="androidx.core.content.FileProvider"
+    android:authorities="${applicationId}.fileprovider"
+    android:exported="false"
+    android:grantUriPermissions="true">
+    <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/file_paths" />
+</provider>
+
+<!--
+  Also required inside <manifest>, above <application>, for Android 11+
+  to be allowed to detect that WhatsApp is installed:
+-->
+<queries>
+    <package android:name="com.whatsapp" />
+</queries>
