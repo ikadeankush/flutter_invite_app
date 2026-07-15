@@ -23,12 +23,21 @@ jobs:
       - name: Fill in missing Android project files
         run: flutter create --project-name invite_sender --org com.example --platforms=android .
 
-      - name: Bump compileSdk to 36 (required by file_picker's dependencies)
+      - name: Bump compileSdk/targetSdk to 36 (required by file_picker's dependencies)
         run: |
-          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts 2>/dev/null || true
-          sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 36/' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/' android/app/build.gradle.kts 2>/dev/null || true
-          sed -i 's/targetSdk flutter.targetSdkVersion/targetSdk 36/' android/app/build.gradle 2>/dev/null || true
+          # Kotlin DSL (build.gradle.kts) — uses "propertyName = value"
+          sed -i -E 's/compileSdk(Version)?[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts 2>/dev/null || true
+          sed -i -E 's/targetSdk(Version)?[[:space:]]*=[[:space:]]*flutter\.targetSdkVersion/targetSdk = 36/' android/app/build.gradle.kts 2>/dev/null || true
+          # Groovy DSL (build.gradle) — uses "propertyName value" (no "=")
+          sed -i -E 's/compileSdk(Version)?[[:space:]]+flutter\.compileSdkVersion/compileSdk 36/' android/app/build.gradle 2>/dev/null || true
+          sed -i -E 's/targetSdk(Version)?[[:space:]]+flutter\.targetSdkVersion/targetSdk 36/' android/app/build.gradle 2>/dev/null || true
+
+      - name: Show resulting SDK lines (debug)
+        run: |
+          echo "---- build.gradle.kts (if present) ----"
+          grep -i "sdk" android/app/build.gradle.kts 2>/dev/null || echo "(no build.gradle.kts)"
+          echo "---- build.gradle (if present) ----"
+          grep -i "sdk" android/app/build.gradle 2>/dev/null || echo "(no build.gradle)"
 
       - name: Get dependencies
         run: flutter pub get
