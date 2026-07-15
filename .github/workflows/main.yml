@@ -1,0 +1,56 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # This fills in everything your repo is currently missing —
+      # build.gradle, settings.gradle, the Gradle wrapper, res/ icons and
+      # styles.xml — matching whatever Flutter version this runner has.
+      # It will NOT overwrite your existing MainActivity.kt, AndroidManifest.xml,
+      # or file_paths.xml, since flutter create skips any file that already exists.
+      - name: Fill in missing Android project files
+        run: flutter create --project-name invite_sender --org com.example --platforms=android .
+
+      - name: Bump compileSdk/targetSdk to 36 (required by file_picker's dependencies)
+        run: |
+          # Kotlin DSL (build.gradle.kts) — uses "propertyName = value"
+          sed -i -E 's/compileSdk(Version)?[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts 2>/dev/null || true
+          sed -i -E 's/targetSdk(Version)?[[:space:]]*=[[:space:]]*flutter\.targetSdkVersion/targetSdk = 36/' android/app/build.gradle.kts 2>/dev/null || true
+          # Groovy DSL (build.gradle) — uses "propertyName value" (no "=")
+          sed -i -E 's/compileSdk(Version)?[[:space:]]+flutter\.compileSdkVersion/compileSdk 36/' android/app/build.gradle 2>/dev/null || true
+          sed -i -E 's/targetSdk(Version)?[[:space:]]+flutter\.targetSdkVersion/targetSdk 36/' android/app/build.gradle 2>/dev/null || true
+
+      - name: Show resulting SDK lines (debug)
+        run: |
+          echo "---- build.gradle.kts (if present) ----"
+          grep -i "sdk" android/app/build.gradle.kts 2>/dev/null || echo "(no build.gradle.kts)"
+          echo "---- build.gradle (if present) ----"
+          grep -i "sdk" android/app/build.gradle 2>/dev/null || echo "(no build.gradle)"
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze project
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: invite-sender-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
