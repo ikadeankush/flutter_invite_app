@@ -23,6 +23,13 @@ jobs:
       - name: Fill in missing Android project files
         run: flutter create --project-name invite_sender --org com.example --platforms=android .
 
+      - name: Bump compileSdk to 36 (required by file_picker's dependencies)
+        run: |
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts 2>/dev/null || true
+          sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 36/' android/app/build.gradle 2>/dev/null || true
+          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/' android/app/build.gradle.kts 2>/dev/null || true
+          sed -i 's/targetSdk flutter.targetSdkVersion/targetSdk 36/' android/app/build.gradle 2>/dev/null || true
+
       - name: Get dependencies
         run: flutter pub get
 
